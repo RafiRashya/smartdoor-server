@@ -1,0 +1,84 @@
+<h3 class="fw-bolder text-neutral-2">Face Detail</h3>
+
+<div class="mt-5 row">
+    <div class="col-8">
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">Face ID</label>
+            <div class="col-9">
+                <input id="faceId" class="form-control rounded-13" value="" readonly>
+            </div>
+        </div>
+
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">Label</label>
+            <div class="col-9">
+                <input id="labelInput" class="form-control rounded-13" value="">
+            </div>
+        </div>
+
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">User</label>
+            <div class="col-9">
+                <input id="faceUser" class="form-control rounded-13" value="" readonly>
+            </div>
+        </div>
+
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">Registered</label>
+            <div class="col-9">
+                <input id="faceCreatedAt" class="form-control rounded-13" value="" readonly>
+            </div>
+        </div>
+
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">Status</label>
+            <div class="col-9 d-flex align-items-center">
+                <select id="statusSelect" class="form-control rounded-13">
+                    <option value="PENDING">PENDING</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <button class="btn bg-blue-1 text-blue-4 rounded-13 px-3" id="saveFaceBtn">
+                Save Change
+            </button>
+        </div>
+    </div>
+
+    <div class="col-4 d-flex justify-content-center">
+        <div class="face-preview-card bg-neutral-7 shadow-c-1 rounded-13 p-3 text-center">
+            <img id="faceImage" src="/image/illustration-user.png" class="face-detail-photo mb-3" alt="Face Preview" style="max-width:100%; height:auto;">
+            <h5 id="faceLabelTitle" class="fw-bold text-blue-4 mb-1"></h5>
+            <p id="faceSource" class="text-neutral-2 mb-0">Source gateway: -</p>
+        </div>
+    </div>
+</div>
+
+<h3 class="fw-bolder text-neutral-2 mt-5 mb-3">Assigned Rooms</h3>
+<div class="api-list mt-3">
+    <div class="table-header d-flex justify-content-between bg-neutral-7 py-2 rounded-13 mb-3 px-3">
+        <p class="table-data fw-bold text-center text-neutral-2">Room Name</p>
+        <p class="table-data fw-bold text-center text-neutral-2">Device ID</p>
+    </div>
+
+    <div class="table-content bg-neutral-7 rounded-13 shadow" id="face-room-container">
+        <div class="text-center py-4 text-neutral-2">Memuat daftar room...</div>
+    </div>
+</div>
+
+<h3 class="fw-bolder text-neutral-2 mt-5 mb-3">Face Log History</h3>
+<div class="api-list mt-3">
+    <div class="table-header d-flex justify-content-between bg-neutral-7 py-2 rounded-13 mb-3 px-3">
+        <p class="table-data fw-bold text-center text-neutral-2">Date</p>
+        <p class="table-data fw-bold text-center text-neutral-2">Room</p>
+        <p class="table-data fw-bold text-center text-neutral-2">Result</p>
+    </div>
+
+    <div class="table-content bg-neutral-7 rounded-13 shadow" id="face-log-container">
+        <div class="text-center py-4 text-neutral-2">Log belum tersedia</div>
+    </div>
+</div>
+
+<script src="/js/faceDetail.js"></script>

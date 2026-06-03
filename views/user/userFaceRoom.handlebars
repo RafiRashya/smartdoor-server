@@ -1,0 +1,46 @@
+<h3 class="fw-bold text-neutral-2 card-number" data-id="{{id}}"></h3>
+
+<div class="card-info d-flex flex-column-reverse flex-md-row justify-content-between align-items-start align-items-md-start mt-2">
+    <div class="accessable-room me-5 w-100">
+        <div class="accessable-table-container bg-neutral-6 shadow-c-1 p-4 px-5 mt-4 rounded-13">
+            <div class="row bg-neutral-7 p-2 rounded-10">
+                <div class="col-6">
+                    <p class="text-center fw-bold text-neutral-2 mb-0">Room ID</p>
+                </div>
+                <div class="col-6">
+                    <p class="text-center fw-bold text-neutral-2 mb-0">Name</p>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center mt-3 pointer py-2 rounded-13 bg-neutral-6 fw-bold shadow-sm" id="load-more-accessable-room">
+            Load More
+        </p>
+    </div>
+
+    <img src="" alt="Face Icon" class="card-icon mb-4 mb-md-0 mt-4 shadow-sm rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+</div>
+
+<h2 class="fw-bolder mt-5 text-neutral-2 mb-3">Available Room</h2>
+
+<form class="serach__form d-flex justify-content-between mb-3 w-100">
+    <input type="text" class="rounded-10 me-3 border-dark p-3 text-neutral-2 w-100 shadow-sm" id="searchForm" placeholder="Search Room Name or ID...">
+    <button type="button" class="bg-blue-4 text-blue-1 fw-bold text-center px-4 rounded-10 shadow-sm pointer" id="searchBtn">Search</button>
+</form>
+
+<div class="building-filter d-flex align-items-center bg-neutral-6 rounded-13 p-2 mb-3 shadow-sm overflow-auto">
+    <p class="building-list-item px-4 py-1 rounded-10 fw-bold text-neutral-7 bg-blue-4 me-2 mb-0 pointer" data-id="all" id="building-all" onclick="buildingSelectorHandler('all')">All</p>
+    <div class="d-flex building-container mb-0"></div>
+    <p class="px-4 py-1 rounded-10 fw-bold text-neutral-7 bg-neutral-3 ms-2 mb-0 pointer" id="loadMoreBuilding">More</p>
+</div>
+
+<div class="table-header d-flex justify-content-between bg-neutral-7 py-2 rounded-13 mb-3 px-3 shadow-sm">
+    <p class="table-data fw-bold text-center text-neutral-2 mb-0">No</p>
+    <p class="table-data fw-bold text-center text-neutral-2 mb-0">Room ID</p>
+    <p class="table-data fw-bold text-center text-neutral-2 mb-0">Room Name</p>
+    <p class="table-data fw-bold text-center text-neutral-2 mb-0">Action</p>
+</div>
+
+<div class="request-room bg-neutral-7 border rounded-10 p-2 shadow-sm"></div>
+
+<p class="text-center mt-3 pointer py-2 rounded-13 bg-neutral-6 fw-bold shadow-sm" id="load-more">Load More</p>

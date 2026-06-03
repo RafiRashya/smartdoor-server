@@ -1,0 +1,89 @@
+.section--conatiner {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+.nav {
+    box-sizing: border-box !important;
+    height: 100vh;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--navWide);
+}
+
+#nav--toggle {
+    cursor: pointer;
+}
+
+.nav--user {
+    padding-left: 20px;
+    width: 100%;
+}
+
+.nav--user-profile {
+    aspect-ratio: 1/1 !important;
+    overflow: hidden;
+    width: 50px !important;
+}
+
+.nav--link {
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    padding-bottom: 24px;
+}
+
+.nav--link-item {
+    box-sizing: content-box !important;
+    width: 100%;
+}
+
+.nav--link-icon-sm {
+    box-sizing: content-box !important;
+    padding-left: 15px;
+    width: 50px !important;
+}
+
+.nav--link-icon {
+    width: 33px !important;
+}
+
+.nav--support-logo>img {
+    width: 100px !important;
+}
+
+.main {
+    background: var(--neutral04);
+    left: var(--navWide);
+    min-height: 100vh;
+    position: absolute;
+    width: calc(100% - var(--navWide));
+}
+
+@media only screen and (max-width: 767px) {
+    .section--conatiner {
+        min-height: 100vh;
+        position: relative;
+    }
+
+    .nav {
+        left: -255px !important;
+        position: fixed;
+        transition: left .4s ease-out;
+        z-index: 999;
+    }
+
+    .nav--open {
+        left: 0 !important;
+    }
+
+    .main {
+        left: 0;
+        width: 100%;
+    }
+}

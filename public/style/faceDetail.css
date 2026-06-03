@@ -1,0 +1,11 @@
+.face-preview-card {
+    width: 320px;
+}
+
+.face-detail-photo {
+    width: 260px;
+    height: 190px;
+    border-radius: 20px;
+    object-fit: cover;
+    background: rgb(var(--color-neutral-4));
+}
