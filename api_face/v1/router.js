@@ -112,6 +112,23 @@ router.get(
     face.syncForGateway
 );
 
+router.patch(
+    "/h/:id",
+    apiJWTValidation,
+    upload.single("image"),
+    param("id").notEmpty(),
+    formChacker,
+    face.update
+);
+
+router.delete(
+    "/h/:id",
+    apiJWTValidation,
+    param("id").notEmpty(),
+    formChacker,
+    face.remove
+);
+
 router.delete(
     "/:id",
     loginRequired,

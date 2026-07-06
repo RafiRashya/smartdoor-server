@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,100 +14,102 @@ datasource db {
 model Role {
   id        String   @id @default(cuid())
   name      String   @unique
-  user      User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User[]
 }
 
 model User {
-  id                String     @id @default(uuid())
-  username          String     @unique
-  accountIsVerified Boolean    @default(false)
-  email             String     @unique
-  emailIsVerified   Boolean    @default(false)
+  id                String          @id @default(uuid())
+  username          String          @unique
   password          String
-  token             String?    @unique
-  tokenExpiredAt    DateTime?
-  role              Role       @relation(fields: [roleId], references: [id])
   roleId            String
-  profil            Profil?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  email             String          @unique
+  passwordUpdatedAt DateTime?
+  accountIsVerified Boolean         @default(false)
+  buildingId        String?
+  emailIsVerified   Boolean         @default(false)
+  token             String?         @unique
+  tokenExpiredAt    DateTime?
+  AccessLog         AccessLog[]
   card              Card[]
   face              Face[]
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  passwordUpdatedAt DateTime?
-  Building          Building[]
-  buildingId        String?
+  FaceEmbedding     FaceEmbedding[]
+  profil            Profil?
+  role              Role            @relation(fields: [roleId], references: [id])
+  Building          Building[]      @relation("BuildingToUser")
 }
 
 model Profil {
   id        String   @id @default(cuid())
   full_name String?
   photo     String?  @default("/image/illustration-user.png")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Card {
   id            String          @id @default(cuid())
   card_number   String          @unique
-  card_name     String?         @default("Kartu Saya")
   pin           String?
   card_status   CARD_STATUS     @default(UNREGISTER)
-  type          CARD_TYPE       @default(card_id)
-  banned        Boolean         @default(false)
-  isTwoStepAuth Boolean         @default(true)
-  user          User?           @relation(fields: [userId], references: [id])
   userId        String?
-  room          Room[]
-  records       Rooms_Records[]
-  roomRequest   Room_Request[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  type          CARD_TYPE       @default(card_id)
+  card_name     String?         @default("Kartu Saya")
+  isTwoStepAuth Boolean         @default(true)
+  banned        Boolean         @default(false)
+  user          User?           @relation(fields: [userId], references: [id])
+  roomRequest   Room_Request[]
+  records       Rooms_Records[]
+  room          Room[]          @relation("CardToRoom")
 }
 
 model Room {
-  id          String          @id @default(cuid())
-  ruid        String          @unique
-  name        String?
-  isActive    Boolean         @default(false)
-  card        Card[]
-  records     Rooms_Records[]
-  roomRequest Room_Request[]
-  faceAccess  FaceRoomAccess[]
+  id           String           @id @default(cuid())
+  ruid         String           @unique
+  name         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  isActive     Boolean          @default(false)
+  buildingId   String?
+  device       Device?
+  faceAccess   FaceRoomAccess[]
   faceRequests Face_Request[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  device      Device?
-  Building    Building?       @relation(fields: [buildingId], references: [id])
-  buildingId  String?
+  Building     Building?        @relation(fields: [buildingId], references: [id])
+  roomRequest  Room_Request[]
+  records      Rooms_Records[]
+  card         Card[]           @relation("CardToRoom")
 }
 
 model Building {
   id        String   @id @default(cuid())
   name      String
-  operator  User[]
-  rooms     Room[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  rooms     Room[]
+  operator  User[]   @relation("BuildingToUser")
 }
 
 model Device {
   id                String        @id @default(cuid())
   device_id         String        @unique
-  pin               String        @default("$2b$10$93H.6AQWHWxlq4IQuT1cgu2oCi7OtgyTjYuWlgcq9beN2xPLSgFUW")
-  lastOnline        DateTime?
-  firmwareVersion   String?
-  deviceType        DEVICE_TYPE?  @default(SINGLE_NETWORK)
-  deviceLastGateway String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   roomId            String?       @unique
-  room              Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  Gateway_Spot      Gateway_Spot? @relation(fields: [gateway_SpotId], references: [id])
+  pin               String        @default("$2b$10$93H.6AQWHWxlq4IQuT1cgu2oCi7OtgyTjYuWlgcq9beN2xPLSgFUW")
+  lastOnline        DateTime?
+  deviceLastGateway String?
+  deviceType        DEVICE_TYPE?  @default(SINGLE_NETWORK)
+  firmwareVersion   String?
   gateway_SpotId    String?
+  Gateway_Spot      Gateway_Spot? @relation(fields: [gateway_SpotId], references: [id])
+  room              Room?         @relation(fields: [roomId], references: [id])
 }
 
 model Gateway_Device {
@@ -128,9 +127,9 @@ model Gateway_Spot {
   name             String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  gateway_DeviceId String         @unique
   nodeDevice       Device[]
   gatewayDevice    Gateway_Device @relation(fields: [gateway_DeviceId], references: [id])
-  gateway_DeviceId String         @unique
 }
 
 model Api_Key {
@@ -141,68 +140,92 @@ model Api_Key {
 }
 
 model Face {
-  id                 String            @id @default(cuid())
-  label              String?
-  imagePath          String
-  embedding          Json?
-  embeddingVersion   String?
-  captureQuality     Float?
+  id                   String           @id @default(cuid())
+  label                String?
+  imagePath            String
+  embedding            Json?
+  embeddingVersion     String?
+  captureQuality       Float?
   sourceGatewayShortId String?
-  status             FACE_STATUS       @default(PENDING)
-  user               User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId             String?
-  roomAccess         FaceRoomAccess[]
-  faceRequests       Face_Request[]
-  syncedAt           DateTime?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  status               FACE_STATUS      @default(PENDING)
+  userId               String?
+  syncedAt             DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  user                 User?            @relation(fields: [userId], references: [id])
+  roomAccess           FaceRoomAccess[]
+  faceRequests         Face_Request[]
 }
 
 model FaceRoomAccess {
   id        String   @id @default(cuid())
-  face      Face     @relation(fields: [faceId], references: [id], onDelete: Cascade)
   faceId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  face      Face     @relation(fields: [faceId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([faceId, roomId])
 }
 
 model Room_Request {
   id        String   @id @default(cuid())
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   roomId    String
   cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 }
 
 model Rooms_Records {
   id               String   @id @default(cuid())
-  unregisteredCard String?
-  room             Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   roomId           String?
-  Card             Card?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
   cardId           String?
-  isSuccess        Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  isSuccess        Boolean  @default(false)
+  unregisteredCard String?
+  Card             Card?    @relation(fields: [cardId], references: [id])
+  room             Room?    @relation(fields: [roomId], references: [id])
 }
 
 model Face_Request {
-  id        String   @id @default(cuid())
-  face      Face     @relation(fields: [faceId], references: [id], onDelete: Cascade)
+  id        String              @id @default(cuid())
   faceId    String
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   roomId    String
   status    FACE_REQUEST_STATUS @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @default(now()) @updatedAt
+  face      Face                @relation(fields: [faceId], references: [id], onDelete: Cascade)
+  room      Room                @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([faceId, roomId])
+}
+
+model AccessLog {
+  id             String   @id
+  timestamp      DateTime
+  access         String   @db.VarChar(20)
+  userId         String?
+  similarity     Float?
+  best_candidate String?
+  createdAt      DateTime @default(now())
+  User           User?    @relation(fields: [userId], references: [id])
+
+  @@index([timestamp(sort: Desc)], map: "idx_AccessLog_timestamp")
+  @@index([userId], map: "idx_AccessLog_userId")
+}
+
+model FaceEmbedding {
+  id        String   @id
+  userId    String
+  embedding Bytes
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_FaceEmbedding_userId")
 }
 
 enum FACE_REQUEST_STATUS {

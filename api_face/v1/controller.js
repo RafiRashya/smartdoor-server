@@ -87,6 +87,7 @@ const parseNumberValue = (value) => {
 
 const buildFaceSelect = {
     id: true,
+    userId: true,
     label: true,
     imagePath: true,
     embedding: true,
@@ -245,18 +246,51 @@ const getGatewayFaceSyncRows = async (gatewayShortId) => {
     })).filter((item) => item.faceEmbedding !== null);
 };
 
-const publishFaceToGateway = async (type, gatewayShortId, face) => {
+const publishFaceToGateway = async (type, gatewayShortId, face, additionalPayload = {}) => {
     try {
         if (!gatewayShortId) return;
 
         const bindingKey = `${type}face/${gatewayShortId}/gateway`;
 
+        let finalEmbedding = Array.isArray(face.embedding) ? face.embedding : face.embedding || null;
+        if (face.userId && type !== "removeface") {
+            const allActiveUserFaces = await prisma.face.findMany({
+                where: {
+                    userId: face.userId,
+                    status: "ACTIVE",
+                    roomAccess: {
+                        some: {
+                            room: {
+                                device: {
+                                    Gateway_Spot: {
+                                        gatewayDevice: {
+                                            gateway_short_id: gatewayShortId,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                select: {
+                    embedding: true,
+                },
+            });
+            const embeddingsList = allActiveUserFaces
+                .map(f => f.embedding)
+                .filter(emb => Array.isArray(emb) && emb.length > 0);
+            if (embeddingsList.length > 0) {
+                finalEmbedding = averageEmbeddings(embeddingsList);
+            }
+        }
+
         const payload = {
             userId: face.userId || null,
             fullName: face.user?.profil?.full_name || face.user?.username || face.label || null,
-            faceEmbedding: Array.isArray(face.embedding) ? face.embedding : face.embedding || null,
+            faceEmbedding: finalEmbedding,
             roomNodeIds: extractRoomNodeIds(face.roomAccess || []),
             createdAt: new Date().toISOString(),
+            ...additionalPayload,
         };
 
         await RabbitConnection.sendMessage(JSON.stringify(payload), bindingKey);
@@ -337,8 +371,12 @@ exports.enroll = async (req, res) => {
             select: buildFaceSelect,
         });
 
+        const additionalPayload = {};
+        if (req.body.sendTimestamp) additionalPayload.sendTimestamp = Number(req.body.sendTimestamp);
+        if (req.body.senderOffset) additionalPayload.senderOffset = Number(req.body.senderOffset);
+
         try {
-            await publishFaceToGateway("add", gatewayShortId, face);
+            await publishFaceToGateway("add", gatewayShortId, face, additionalPayload);
         } catch (e) {
             console.error("publish enqueue error", e);
         }
@@ -448,9 +486,13 @@ exports.update = async (req, res) => {
             select: buildFaceSelect,
         });
 
+        const additionalPayload = {};
+        if (req.body.sendTimestamp) additionalPayload.sendTimestamp = Number(req.body.sendTimestamp);
+        if (req.body.senderOffset) additionalPayload.senderOffset = Number(req.body.senderOffset);
+
         try {
             const gwShort = updatedFace.sourceGatewayShortId || null;
-            await publishFaceToGateway("update", gwShort, updatedFace);
+            await publishFaceToGateway("update", gwShort, updatedFace, additionalPayload);
         } catch (e) {
             console.error("publish enqueue error", e);
         }
@@ -892,15 +934,88 @@ exports.remove = async (req, res) => {
         }
 
         const filePath = path.join(__dirname, "..", "..", "public", face.imagePath.replace(/^\//, ""));
+        
+        try {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch (fileErr) {
+            console.error("Failed to delete physical face file:", fileErr);
+        }
+
         await prisma.face.delete({ where: { id } });
 
         try {
-            const payload = { userId: face.userId, createdAt: new Date().toISOString() };
-            await RabbitConnection.sendMessage(JSON.stringify(payload), `removeface/${face.sourceGatewayShortId || 'all'}/gateway`);
-        } catch (err) {}
+            if (face.userId) {
+                const activeFaces = await prisma.face.findMany({
+                    where: {
+                        userId: face.userId,
+                        status: "ACTIVE",
+                    },
+                    select: {
+                        embedding: true,
+                        roomAccess: {
+                            select: {
+                                room: {
+                                    select: {
+                                        device: { select: { device_id: true } }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                });
 
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+                const additionalPayload = {};
+                if (req.query.sendTimestamp) additionalPayload.sendTimestamp = Number(req.query.sendTimestamp);
+                if (req.query.senderOffset) additionalPayload.senderOffset = Number(req.query.senderOffset);
+
+                if (activeFaces.length > 0) {
+                    const embeddingsList = activeFaces
+                        .map(f => f.embedding)
+                        .filter(emb => Array.isArray(emb) && emb.length > 0);
+                    const avgEmbedding = averageEmbeddings(embeddingsList);
+
+                    const user = await prisma.user.findUnique({
+                        where: { id: face.userId },
+                        include: { profil: true },
+                    });
+
+                    const roomNodeIds = new Set();
+                    for (const f of activeFaces) {
+                        const nodes = extractRoomNodeIds(f.roomAccess || []);
+                        for (const node of nodes) {
+                            roomNodeIds.add(node);
+                        }
+                    }
+
+                    const payload = {
+                        userId: face.userId,
+                        fullName: user?.profil?.full_name || user?.username || face.label || null,
+                        faceEmbedding: avgEmbedding,
+                        roomNodeIds: Array.from(roomNodeIds),
+                        createdAt: new Date().toISOString(),
+                        ...additionalPayload,
+                    };
+
+                    await RabbitConnection.sendMessage(
+                        JSON.stringify(payload),
+                        `updateface/${face.sourceGatewayShortId || 'all'}/gateway`
+                    );
+                } else {
+                    const payload = { 
+                        userId: face.userId, 
+                        createdAt: new Date().toISOString(),
+                        ...additionalPayload,
+                    };
+                    await RabbitConnection.sendMessage(
+                        JSON.stringify(payload),
+                        `removeface/${face.sourceGatewayShortId || 'all'}/gateway`
+                    );
+                }
+            }
+        } catch (err) {
+            console.error("AMQP remove publish failed", err);
         }
 
         return resSuccess({
