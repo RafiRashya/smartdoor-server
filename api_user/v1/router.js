@@ -239,4 +239,18 @@ router.post(
     urlTokenIsValid,
     user.resetPassword
 );
+router.patch(
+    "/:userId/mfa-preference",
+    loginRequired,
+    allowedRole("ADMIN", "OPERATOR"),
+    formChacker,
+    user.updateMfaPreference
+);
+router.patch(
+    "/:userId/admin-change-pin",
+    loginRequired,
+    allowedRole("ADMIN", "OPERATOR"),
+    formChacker,
+    user.adminModifyUserPin
+);
 module.exports = router;

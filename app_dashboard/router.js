@@ -96,6 +96,13 @@ router.get(
     accountIsVerified,
     dashboard.faceDetail
 );
+router.get(
+    "/face-access/change-pin/:faceId",
+    loginRequired,
+    allowedRole("ADMIN", "OPERATOR"),
+    accountIsVerified,
+    dashboard.adminModifyUserPin
+);
 
 router.get(
     "/room/detail/:ruid",

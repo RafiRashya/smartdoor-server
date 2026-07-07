@@ -10,6 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const roomContainer = document.getElementById("face-room-container");
     const logContainer = document.getElementById("face-log-container");
     const saveBtn = document.getElementById("saveFaceBtn");
+    const requireCardToggle = document.getElementById("requireCardToggle");
+    const requirePinToggle = document.getElementById("requirePinToggle");
+    const mfaNoUserHint = document.getElementById("mfa-no-user-hint");
+    const changePinBtn = document.getElementById("changePinBtn");
+
+    let currentUserId = null;
 
     const formatDate = (s) => {
         if (!s) return "-";
@@ -65,32 +71,94 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // logs: placeholder (no API in repo for logs). keep default message.
+            // logs: placeholder
             logContainer.innerHTML = `<div class="text-center py-4 text-neutral-2">No logs available</div>`;
+
+            // MFA preference — hanya aktif jika face sudah terhubung ke user
+            currentUserId = f.userId || null;
+            if (currentUserId) {
+                // Ambil data user untuk mendapatkan requireCard & requirePin terkini
+                await loadMfaPreference(currentUserId);
+                requireCardToggle.disabled = false;
+                requirePinToggle.disabled = false;
+                if (mfaNoUserHint) mfaNoUserHint.style.display = "none";
+                if (changePinBtn) {
+                    changePinBtn.href = `/dashboard/face-access/change-pin/${id}`;
+                    changePinBtn.style.display = "inline-block";
+                }
+            } else {
+                requireCardToggle.checked = false;
+                requireCardToggle.disabled = true;
+                requirePinToggle.checked = false;
+                requirePinToggle.disabled = true;
+                if (mfaNoUserHint) mfaNoUserHint.style.display = "block";
+                if (changePinBtn) {
+                    changePinBtn.style.display = "none";
+                }
+            }
         } catch (err) {
             showToast({ theme: "danger", title: "Error", desc: err.message || "Network error" });
+        }
+    };
+
+
+    const loadMfaPreference = async (userId) => {
+        try {
+            const resp = await fetch(`/api/v1/user/detail/${userId}`);
+            if (!resp.ok) return;
+            const u = await resp.json().catch(() => null);
+            if (u && typeof u === "object") {
+                // endpoint /detail/:id returns user object directly (not wrapped in {success, data})
+                requireCardToggle.checked = !!u.requireCard;
+                requirePinToggle.checked = !!u.requirePin;
+            }
+        } catch (err) {
+            // Non-critical: keep toggles at default false
+            console.warn("Failed to load MFA preference:", err.message);
         }
     };
 
     saveBtn.addEventListener("click", async () => {
         try {
             saveBtn.disabled = true;
-            const payload = {
+
+            // 1. Save face label & status
+            const facePayload = {
                 label: labelInput.value || null,
                 status: statusSelect.value || undefined,
             };
-            const resp = await fetch(`/api/v1/face/${id}`, {
+            const faceResp = await fetch(`/api/v1/face/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(facePayload),
             });
-            const json = await resp.json().catch(() => null);
-            if (!resp.ok || !json?.success) {
-                showToast({ theme: "danger", title: "Failed save", desc: json?.message || `HTTP ${resp.status}` });
+            const faceJson = await faceResp.json().catch(() => null);
+            if (!faceResp.ok || !faceJson?.success) {
+                showToast({ theme: "danger", title: "Failed save face", desc: faceJson?.message || `HTTP ${faceResp.status}` });
                 saveBtn.disabled = false;
                 return;
             }
-            showToast({ theme: "success", title: "Saved", desc: json?.message || "Face updated" });
+
+            // 2. Save MFA preference if face is linked to a user
+            if (currentUserId) {
+                const mfaPayload = {
+                    requireCard: requireCardToggle.checked,
+                    requirePin: requirePinToggle.checked,
+                };
+                const mfaResp = await fetch(`/api/v1/user/${currentUserId}/mfa-preference`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(mfaPayload),
+                });
+                const mfaJson = await mfaResp.json().catch(() => null);
+                if (!mfaResp.ok || !mfaJson?.success) {
+                    showToast({ theme: "warning", title: "Face saved, MFA gagal", desc: mfaJson?.message || `HTTP ${mfaResp.status}` });
+                    saveBtn.disabled = false;
+                    return;
+                }
+            }
+
+            showToast({ theme: "success", title: "Saved", desc: "Face dan preferensi MFA berhasil disimpan" });
             await loadDetail();
             saveBtn.disabled = false;
         } catch (err) {
@@ -100,4 +168,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     loadDetail();
-});
+});

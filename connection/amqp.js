@@ -43,7 +43,26 @@ class RabbitConnection {
                 `${RabbitSettings.protocol}://${RabbitSettings.username}:${RabbitSettings.password}@${RabbitSettings.hostname}/${RabbitSettings.vhost}`
                 // `${RabbitSettings.protocol}://${RabbitSettings.hostname}`
             );
+            
+            this.connection.on("error", (err) => {
+                console.error(" [!] RabbitMQ connection error:", err.message);
+            });
+
+            this.connection.on("close", () => {
+                console.log(" [!] RabbitMQ connection closed. Reconnecting in 5s...");
+                setTimeout(() => RabbitConnection.createConnection(), 5000);
+            });
+
             this.channel = await this.connection.createChannel();
+            
+            this.channel.on("error", (err) => {
+                console.error(" [!] RabbitMQ channel error:", err.message);
+            });
+
+            this.channel.on("close", () => {
+                console.log(" [!] RabbitMQ channel closed.");
+            });
+
             this.channel.assertExchange(RabbitSettings.exchange, "direct", {
                 durable: true,
             });

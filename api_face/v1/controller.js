@@ -181,6 +181,9 @@ const getGatewayFaceSyncRows = async (gatewayShortId) => {
                 select: {
                     id: true,
                     username: true,
+                    requireCard: true,
+                    requirePin: true,
+                    pin: true,
                     profil: {
                         select: {
                             full_name: true,
@@ -218,6 +221,9 @@ const getGatewayFaceSyncRows = async (gatewayShortId) => {
             userId: face.userId,
             username: face.user?.username || face.label || face.user?.profil?.full_name || face.userId,
             fullName: face.user?.profil?.full_name || face.user?.username || face.label || face.userId,
+            requireCard: face.user?.requireCard || false,
+            requirePin: face.user?.requirePin || false,
+            pin: face.user?.pin || null,
             embeddings: [],
             roomNodeIds: new Set(),
             faceIds: [],
@@ -240,6 +246,9 @@ const getGatewayFaceSyncRows = async (gatewayShortId) => {
         userId: item.userId,
         username: item.username,
         fullName: item.fullName,
+        requireCard: item.requireCard,
+        requirePin: item.requirePin,
+        pin: item.pin,
         faceIds: item.faceIds,
         faceEmbedding: averageEmbeddings(item.embeddings),
         roomNodeIds: Array.from(item.roomNodeIds),
@@ -284,11 +293,30 @@ const publishFaceToGateway = async (type, gatewayShortId, face, additionalPayloa
             }
         }
 
+        // Fetch fresh MFA preferences and pin if user exists (face.user may not include requireCard/requirePin)
+        let requireCard = false;
+        let requirePin = false;
+        let pin = null;
+        if (face.userId) {
+            const userMfa = await prisma.user.findUnique({
+                where: { id: face.userId },
+                select: { requireCard: true, requirePin: true, pin: true },
+            });
+            if (userMfa) {
+                requireCard = userMfa.requireCard;
+                requirePin = userMfa.requirePin;
+                pin = userMfa.pin;
+            }
+        }
+
         const payload = {
             userId: face.userId || null,
             fullName: face.user?.profil?.full_name || face.user?.username || face.label || null,
             faceEmbedding: finalEmbedding,
             roomNodeIds: extractRoomNodeIds(face.roomAccess || []),
+            requireCard,
+            requirePin,
+            pin,
             createdAt: new Date().toISOString(),
             ...additionalPayload,
         };
@@ -1139,13 +1167,11 @@ exports.adminFaceRequestList = async (req, res) => {
             },
         });
 
-        return resSuccess({
-            res,
-            title: "Success get face request list",
-            data: requests,
-        });
+        return resSuccess({ res, title: "Success get face request list", data: requests });
     } catch (error) {
         console.error("adminFaceRequestList error:", error);
         return resError({ res, title: "Failed get face request list", errors: error });
     }
 };
+
+exports.publishFaceToGateway = publishFaceToGateway;

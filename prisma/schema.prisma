@@ -33,6 +33,9 @@ model User {
   emailIsVerified   Boolean         @default(false)
   token             String?         @unique
   tokenExpiredAt    DateTime?
+  requireCard       Boolean         @default(false)
+  requirePin        Boolean         @default(false)
+  pin               String?
   AccessLog         AccessLog[]
   card              Card[]
   face              Face[]

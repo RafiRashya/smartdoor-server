@@ -5,100 +5,105 @@
 Table Role {
   id String [pk]
   name String [unique, not null]
-  user User [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  user User [not null]
 }
 
 Table User {
   id String [pk]
   username String [unique, not null]
-  accountIsVerified Boolean [not null, default: false]
-  email String [unique, not null]
-  emailIsVerified Boolean [not null, default: false]
   password String [not null]
-  token String [unique]
-  tokenExpiredAt DateTime
-  role Role [not null]
   roleId String [not null]
-  profil Profil
-  card Card [not null]
-  face Face [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  email String [unique, not null]
   passwordUpdatedAt DateTime
-  Building Building [not null]
+  accountIsVerified Boolean [not null, default: false]
   buildingId String
+  emailIsVerified Boolean [not null, default: false]
+  token String [unique]
+  tokenExpiredAt DateTime
+  requireCard Boolean [not null, default: false]
+  requirePin Boolean [not null, default: false]
+  pin String
+  AccessLog AccessLog [not null]
+  card Card [not null]
+  face Face [not null]
+  FaceEmbedding FaceEmbedding [not null]
+  profil Profil
+  role Role [not null]
+  Building Building [not null]
 }
 
 Table Profil {
   id String [pk]
   full_name String
   photo String [default: '/image/illustration-user.png']
-  user User [not null]
   userId String [unique, not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  user User [not null]
 }
 
 Table Card {
   id String [pk]
   card_number String [unique, not null]
-  card_name String [default: 'Kartu Saya']
   pin String
   card_status CARD_STATUS [not null, default: 'UNREGISTER']
-  type CARD_TYPE [not null, default: 'card_id']
-  banned Boolean [not null, default: false]
-  isTwoStepAuth Boolean [not null, default: true]
-  user User
   userId String
-  room Room [not null]
-  records Rooms_Records [not null]
-  roomRequest Room_Request [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  type CARD_TYPE [not null, default: 'card_id']
+  card_name String [default: 'Kartu Saya']
+  isTwoStepAuth Boolean [not null, default: true]
+  banned Boolean [not null, default: false]
+  user User
+  roomRequest Room_Request [not null]
+  records Rooms_Records [not null]
+  room Room [not null]
 }
 
 Table Room {
   id String [pk]
   ruid String [unique, not null]
   name String
-  isActive Boolean [not null, default: false]
-  card Card [not null]
-  records Rooms_Records [not null]
-  roomRequest Room_Request [not null]
-  faceAccess FaceRoomAccess [not null]
-  faceRequests Face_Request [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  device Device
-  Building Building
+  isActive Boolean [not null, default: false]
   buildingId String
+  device Device
+  faceAccess FaceRoomAccess [not null]
+  faceRequests Face_Request [not null]
+  Building Building
+  roomRequest Room_Request [not null]
+  records Rooms_Records [not null]
+  card Card [not null]
 }
 
 Table Building {
   id String [pk]
   name String [not null]
-  operator User [not null]
-  rooms Room [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  rooms Room [not null]
+  operator User [not null]
 }
 
 Table Device {
   id String [pk]
   device_id String [unique, not null]
-  pin String [not null, default: '$2b$10$93H.6AQWHWxlq4IQuT1cgu2oCi7OtgyTjYuWlgcq9beN2xPLSgFUW']
-  lastOnline DateTime
-  firmwareVersion String
-  deviceType DEVICE_TYPE [default: 'SINGLE_NETWORK']
-  deviceLastGateway String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   roomId String [unique]
-  room Room
-  Gateway_Spot Gateway_Spot
+  pin String [not null, default: '$2b$10$93H.6AQWHWxlq4IQuT1cgu2oCi7OtgyTjYuWlgcq9beN2xPLSgFUW']
+  lastOnline DateTime
+  deviceLastGateway String
+  deviceType DEVICE_TYPE [default: 'SINGLE_NETWORK']
+  firmwareVersion String
   gateway_SpotId String
+  Gateway_Spot Gateway_Spot
+  room Room
 }
 
 Table Gateway_Device {
@@ -116,9 +121,9 @@ Table Gateway_Spot {
   name String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  gateway_DeviceId String [unique, not null]
   nodeDevice Device [not null]
   gatewayDevice Gateway_Device [not null]
-  gateway_DeviceId String [unique, not null]
 }
 
 Table Api_Key {
@@ -137,23 +142,23 @@ Table Face {
   captureQuality Float
   sourceGatewayShortId String
   status FACE_STATUS [not null, default: 'PENDING']
-  user User
   userId String
-  roomAccess FaceRoomAccess [not null]
-  faceRequests Face_Request [not null]
   syncedAt DateTime
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  user User
+  roomAccess FaceRoomAccess [not null]
+  faceRequests Face_Request [not null]
 }
 
 Table FaceRoomAccess {
   id String [pk]
-  face Face [not null]
   faceId String [not null]
-  room Room [not null]
   roomId String [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  face Face [not null]
+  room Room [not null]
 
   indexes {
     (faceId, roomId) [unique]
@@ -162,39 +167,58 @@ Table FaceRoomAccess {
 
 Table Room_Request {
   id String [pk]
-  card Card [not null]
-  room Room [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   roomId String [not null]
   cardId String [not null]
+  card Card [not null]
+  room Room [not null]
 }
 
 Table Rooms_Records {
   id String [pk]
-  unregisteredCard String
-  room Room
   roomId String
-  Card Card
   cardId String
-  isSuccess Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  isSuccess Boolean [not null, default: false]
+  unregisteredCard String
+  Card Card
+  room Room
 }
 
 Table Face_Request {
   id String [pk]
-  face Face [not null]
   faceId String [not null]
-  room Room [not null]
   roomId String [not null]
   status FACE_REQUEST_STATUS [not null, default: 'PENDING']
   createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
+  updatedAt DateTime [default: `now()`, not null]
+  face Face [not null]
+  room Room [not null]
 
   indexes {
     (faceId, roomId) [unique]
   }
+}
+
+Table AccessLog {
+  id String [pk]
+  timestamp DateTime [not null]
+  access String [not null]
+  userId String
+  similarity Float
+  best_candidate String
+  createdAt DateTime [default: `now()`, not null]
+  User User
+}
+
+Table FaceEmbedding {
+  id String [pk]
+  userId String [not null]
+  embedding Bytes [not null]
+  createdAt DateTime [default: `now()`, not null]
+  User User [not null]
 }
 
 Enum FACE_REQUEST_STATUS {
@@ -236,13 +260,13 @@ Ref: Card.userId > User.id
 
 Ref: Room.buildingId > Building.id
 
-Ref: Device.roomId - Room.id [delete: Set Null]
-
 Ref: Device.gateway_SpotId > Gateway_Spot.id
+
+Ref: Device.roomId - Room.id
 
 Ref: Gateway_Spot.gateway_DeviceId - Gateway_Device.id
 
-Ref: Face.userId > User.id [delete: Set Null]
+Ref: Face.userId > User.id
 
 Ref: FaceRoomAccess.faceId > Face.id [delete: Cascade]
 
@@ -252,10 +276,14 @@ Ref: Room_Request.cardId > Card.id [delete: Cascade]
 
 Ref: Room_Request.roomId > Room.id [delete: Cascade]
 
-Ref: Rooms_Records.roomId > Room.id [delete: Set Null]
+Ref: Rooms_Records.cardId > Card.id
 
-Ref: Rooms_Records.cardId > Card.id [delete: Set Null]
+Ref: Rooms_Records.roomId > Room.id
 
 Ref: Face_Request.faceId > Face.id [delete: Cascade]
 
 Ref: Face_Request.roomId > Room.id [delete: Cascade]
+
+Ref: AccessLog.userId > User.id
+
+Ref: FaceEmbedding.userId > User.id [delete: Cascade]

@@ -906,3 +906,151 @@ exports.adminModifyUserAvatar = async (req, res) => {
         });
     }
 };
+
+exports.updateMfaPreference = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { requireCard, requirePin } = req.body;
+
+        if (!userId) {
+            return resError({ res, title: "User ID is required", code: 400 });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return resError({ res, title: "User not found", code: 404 });
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                requireCard: requireCard === true || requireCard === "true",
+                requirePin: requirePin === true || requirePin === "true",
+            },
+            select: {
+                id: true,
+                username: true,
+                requireCard: true,
+                requirePin: true,
+            },
+        });
+
+        return resSuccess({
+            res,
+            title: "MFA preference updated",
+            data: updated,
+        });
+    } catch (error) {
+        return resError({ res, title: "Failed update MFA preference", errors: error });
+    }
+};
+
+exports.adminModifyUserPin = async (req, res) => {
+    const { userId } = req.params;
+    const { newPin } = req.body;
+    try {
+        const { publishFaceToGateway } = require("../../api_face/v1/controller");
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                pin: hasher(newPin),
+            },
+            select: {
+                id: true,
+                username: true,
+                requireCard: true,
+                requirePin: true,
+                pin: true,
+                face: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        label: true,
+                        embedding: true,
+                        embeddingVersion: true,
+                        captureQuality: true,
+                        sourceGatewayShortId: true,
+                        status: true,
+                        syncedAt: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                                email: true,
+                                profil: {
+                                    select: {
+                                        full_name: true,
+                                        photo: true,
+                                    },
+                                },
+                            },
+                        },
+                        roomAccess: {
+                            select: {
+                                id: true,
+                                roomId: true,
+                                room: {
+                                    select: {
+                                        id: true,
+                                        ruid: true,
+                                        name: true,
+                                        device: {
+                                            select: {
+                                                deviceType: true,
+                                                device_id: true,
+                                                Gateway_Spot: {
+                                                    select: {
+                                                        gatewayDevice: {
+                                                            select: {
+                                                                gateway_short_id: true,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        // BROADCAST DATA TO GATEWAY VIA AMQP
+        const notDuplicateArray = [];
+        for (const f of user.face) {
+            const rooms = f.roomAccess || [];
+            for (const r of rooms) {
+                const dev = r.room?.device;
+                if (dev && dev.deviceType === "MULTI_NETWORK") {
+                    const gatewayShortId = dev.Gateway_Spot?.gatewayDevice?.gateway_short_id;
+                    if (gatewayShortId && !notDuplicateArray.includes(gatewayShortId)) {
+                        notDuplicateArray.push(gatewayShortId);
+                        await publishFaceToGateway("update", gatewayShortId, f);
+                    }
+                }
+            }
+        }
+
+        return resSuccess({
+            res,
+            title: "Success change user pin",
+            data: {
+                id: user.id,
+                username: user.username,
+            },
+        });
+    } catch (error) {
+        return resError({
+            res,
+            title: "Cannot change user pin",
+            errors: error,
+        });
+    }
+};
+

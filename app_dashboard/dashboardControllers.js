@@ -544,3 +544,40 @@ exports.facePairingToDashboard = async (req, res) => {
     // Jika file Anda bernama 'face-access-pair.handlebars', ganti menjadi 'face-access-pair'
     res.render("pairface", data); 
 };
+
+exports.adminModifyUserPin = async (req, res) => {
+    const { faceId } = req.params;
+    try {
+        const face = await prisma.face.findUnique({
+            where: { id: faceId },
+            select: {
+                id: true,
+                label: true,
+                userId: true,
+                user: {
+                    select: {
+                        username: true,
+                    },
+                },
+            },
+        });
+
+        if (!face || !face.userId) {
+            return res.redirect("/dashboard/face-access");
+        }
+
+        const data = {
+            faceAccess: "bg-neutral-4",
+            styles: ["/style/changePin.css"],
+            scripts: ["/js/faceChangePin.js"],
+            id: face.id,
+            label: face.label || face.user?.username || "Face Access",
+            userId: face.userId,
+            username: face.user?.username,
+            layout: await layoutHandler(getUser(req)),
+        };
+        res.render("faceChangePin", data);
+    } catch (error) {
+        res.redirect("/dashboard/face-access");
+    }
+};

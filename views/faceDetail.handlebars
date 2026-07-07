@@ -40,7 +40,37 @@
             </div>
         </div>
 
+        <div class="mb-3 row align-items-center" id="mfa-section">
+            <div class="col-12 mb-2">
+                <small class="text-neutral-2 fw-bold">MFA Preference (berlaku per User)</small>
+            </div>
+            <label class="col-3 fw-bold text-neutral-2">Require Card</label>
+            <div class="col-9 d-flex align-items-center">
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="requireCardToggle" disabled>
+                </div>
+                <small class="text-neutral-2" id="requireCardHint">Wajib tap kartu setelah wajah terdeteksi</small>
+            </div>
+        </div>
+
+        <div class="mb-3 row align-items-center">
+            <label class="col-3 fw-bold text-neutral-2">Require PIN</label>
+            <div class="col-9 d-flex align-items-center">
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="requirePinToggle" disabled>
+                </div>
+                <small class="text-neutral-2">Wajib ketik PIN setelah wajah terdeteksi</small>
+            </div>
+        </div>
+
+        <div id="mfa-no-user-hint" class="col-12 mb-3" style="display:none;">
+            <small class="text-warning">⚠ MFA tidak tersedia — face belum dipasangkan ke user.</small>
+        </div>
+
         <div class="d-flex justify-content-end mt-4">
+            <a class="btn bg-blue-2 text-blue-3 rounded-13 px-3 me-2" id="changePinBtn" style="display:none;">
+                Change PIN
+            </a>
             <button class="btn bg-blue-1 text-blue-4 rounded-13 px-3" id="saveFaceBtn">
                 Save Change
             </button>
