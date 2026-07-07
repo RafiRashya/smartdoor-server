@@ -438,6 +438,7 @@ exports.pairUserToCard = async (req, res) => {
             isTwoStepAuth: true,
             card_status: true,
             banned: true,
+            userId: true,
             user: {
                 select: {
                     username: true,
@@ -488,6 +489,7 @@ exports.pairUserToCard = async (req, res) => {
                 cardStatus: card.card_status,
                 isBanned: card.banned,
                 isTwoStepAuth: card.isTwoStepAuth,
+                userId: card.userId || null,
                 duid: data.device.device_id,
                 createdAt: new Date(),
             };
